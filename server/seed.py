@@ -1,43 +1,47 @@
-#!/usr/bin/env python3
-
-from random import randint
-
-from faker import Faker
-
 from app import app
-from models import db, Article, User
-
-fake = Faker()
+from models import db, User, Article
 
 with app.app_context():
+    # Drop and recreate tables to reset ID sequence
+    db.drop_all()
+    db.create_all()
 
-    print("Deleting all records...")
-    Article.query.delete()
-    User.query.delete()
+    # Create some users
+    user1 = User(name="Alice")
+    user2 = User(name="Bob")
 
-    fake = Faker()
+    db.session.add_all([user1, user2])
+    db.session.commit()
 
-    print("Creating users...")
-    users = [User(name=fake.name()) for i in range(25)]
-    db.session.add_all(users)
-
-    print("Creating articles...")
-    articles = []
-    for i in range(100):
-        content = fake.paragraph(nb_sentences=8)
-        preview = content[:25] + '...'
-        
-        article = Article(
-            author=fake.name(),
-            title=fake.sentence(),
-            content=content,
-            preview=preview,
-            minutes_to_read=randint(1,20),
+    # Create some articles
+    articles = [
+        Article(
+            author="Alice",
+            title="Getting Started with Flask",
+            content="Flask is a lightweight WSGI web application framework.",
+            preview="Flask basics",
+            minutes_to_read=5,
+            user_id=user1.id
+        ),
+        Article(
+            author="Bob",
+            title="Understanding Cookies",
+            content="Cookies are used to store data in the browser.",
+            preview="Cookies explained",
+            minutes_to_read=3,
+            user_id=user2.id
+        ),
+        Article(
+            author="Alice",
+            title="Intro to SQLAlchemy",
+            content="SQLAlchemy is a Python SQL toolkit and ORM.",
+            preview="ORM fundamentals",
+            minutes_to_read=4,
+            user_id=user1.id
         )
-
-        articles.append(article)
+    ]
 
     db.session.add_all(articles)
-    
     db.session.commit()
-    print("Complete.")
+
+    print("✅ Database seeded successfully! At least one article now has ID=1.")
